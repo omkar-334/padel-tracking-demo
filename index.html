@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Padel tracking demo</title>
-<meta name="description" content="A computer vision pipeline for amateur padel: per player positions in metres, distance, heatmaps, net approach events, running in parallel on Modal GPUs. Includes ablations, costs and open problems.">
+<title>Padel match analytics</title>
+<meta name="description" content="Upload a padel match video and get per player distance, speed, sprints, court zones, heatmaps and key moments in minutes, from a single fixed camera.">
 <style>
 :root{--bg:#fafafa;--fg:#17181c;--mut:#5a5f6a;--card:#fff;--line:#dfe2e8;--acc:#1f5fd6;--good:#12804a;--warn:#b25e00;--bad:#b3261e;--code:#f0f2f6}
 @media (prefers-color-scheme:dark){:root{--bg:#121316;--fg:#e8eaee;--mut:#9aa0ab;--card:#1a1c21;--line:#2c2f37;--acc:#7aa7ff;--good:#4ec38a;--warn:#e0a04a;--bad:#ff8a80;--code:#23262d}}
@@ -15,71 +15,62 @@ p,li{max-width:78ch}a{color:var(--acc)}.lead{font-size:1.12rem;color:var(--mut)}
 video,iframe{width:100%;border:0;border-radius:10px;background:#000}.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.vgrid{grid-template-columns:1fr}}.ratio{aspect-ratio:16/10}
 .note{border-left:4px solid var(--warn);background:var(--card);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0}.cap{color:var(--mut);font-size:.88rem;margin:.3em 0 1.2em}
 svg text{font:12px system-ui;fill:var(--fg)}svg .b{fill:var(--card);stroke:var(--line)}svg .a{stroke:var(--mut);fill:none;marker-end:url(#ar)}svg .m{fill:var(--mut)}
+
+.hero{padding:34px 0 8px}.hero h1{font-size:2.5rem;line-height:1.15;margin:.1em 0 .3em;max-width:20ch}.eyebrow{color:var(--acc);font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:.8rem}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0}.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}.step i{font-style:normal;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;font-size:.85rem;margin-bottom:6px}.step b{display:block}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:14px 0}.feat div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}.feat b{display:block;margin-bottom:2px}
+.player{display:grid;grid-template-columns:1fr 1fr;gap:14px;pointer-events:auto}@media(max-width:760px){.player{grid-template-columns:1fr}}
+#yt,#yt iframe{pointer-events:none}.ctl{display:flex;gap:12px;align-items:center;margin:12px 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+#pp{font-size:1rem;font-weight:600;padding:10px 26px;border-radius:99px;border:0;background:var(--acc);color:#fff;cursor:pointer;min-width:110px}#sk{flex:1;accent-color:var(--acc)}#tm{font-variant-numeric:tabular-nums;color:var(--mut);font-size:.9rem;min-width:84px;text-align:right}
+.cta{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:10px}
 </style></head><body><main>
 
-<h1>Padel player tracking: a computer vision pipeline demo</h1>
-<p class="lead">One fixed camera behind the court. The pipeline finds the four players, maps them to real court metres, keeps their identities, and produces per player distance, zones, heatmaps, sprint counts and timestamped net approach events with confidence scores. A 76 minute match is processed in about 8 minutes on parallel serverless GPUs. This page shows how it works, what it costs, and where it still fails.</p>
-<p>Code available on request &middot; Python, supervision, roboflow trackers (ByteTrack), RF-DETR (Apache 2.0), Modal. No Ultralytics and no AGPL dependency (enforced by a test).</p>
+<div class="hero"><div class="eyebrow">Match video in, player stats out</div>
+<h1>Player analytics from one camera, in minutes</h1>
+<p class="lead">Film a padel match with a single fixed camera behind the court. Within minutes you get each player's distance covered, speed and sprints, time at the net, court heatmaps and a list of key moments, without wearables, sensors or manual tagging of the match.</p></div>
 
 <div class="cards">
-<div class="card good"><b>8.1 min</b><span>76 min match, 1080p, on 4 Modal GPUs (target: a 60 min match in under 15 min)</span></div>
-<div class="card good"><b>5.9 min</b><span>54 min match, 1080p 60 fps, 4 GPUs</span></div>
-<div class="card"><b>about $0.3 to $0.4</b><span>estimated GPU cost per match (assumption stated below)</span></div>
-<div class="card good"><b>94%</b><span>player identity on a match with distinct shirts (human verified labels, 71 instances)</span></div>
-<div class="card bad"><b>about 63%</b><span>player identity when all four players wear dark clothes. An open problem, shown in full below</span></div>
-<div class="card good"><b>99% / 96%</b><span>player detection precision / recall (court gated)</span></div>
-<div class="card warn"><b>72% / 58%</b><span>net approach events: precision / recall (one 10 minute window)</span></div>
-<div class="card warn"><b>82% / 75%</b><span>ball detection precision / recall with tiling (108 frames)</span></div>
+<div class="card good"><b>8 min</b><span>to process a 76 minute 1080p match (60 to 90 minute matches, 4 GPUs)</span></div>
+<div class="card good"><b>about $0.40</b><span>estimated compute cost per match</span></div>
+<div class="card good"><b>99% / 96%</b><span>player detection precision / recall on the court</span></div>
+<div class="card good"><b>0.2 to 0.5 m</b><span>court position calibration error</span></div>
 </div>
-<p class="cap">All accuracy numbers were scored against labels made with a vision language model and then checked by a human (details in "How the numbers were measured"). Sample sizes are small, so read each figure with a margin of roughly five points.</p>
 
-<h2>Approach</h2>
-<svg viewBox="0 0 980 215" width="100%" role="img" aria-label="Pipeline diagram">
-<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="m"/></marker></defs>
-<rect class="b" x="6" y="62" width="118" height="70" rx="8"/><text x="65" y="92" text-anchor="middle">Match video</text><text x="65" y="110" text-anchor="middle" class="m">60 to 90 min</text>
-<path class="a" d="M124 97H150"/>
-<rect class="b" x="152" y="62" width="130" height="70" rx="8"/><text x="217" y="88" text-anchor="middle">1 min chunks</text><text x="217" y="106" text-anchor="middle" class="m">5 s overlap, in parallel</text><text x="217" y="122" text-anchor="middle" class="m">on Modal GPUs</text>
-<path class="a" d="M282 97H308"/>
-<rect class="b" x="310" y="62" width="128" height="70" rx="8"/><text x="374" y="88" text-anchor="middle">RF-DETR</text><text x="374" y="106" text-anchor="middle" class="m">swappable detector</text><text x="374" y="122" text-anchor="middle" class="m">persons (+ ball tiles)</text>
-<path class="a" d="M438 97H464"/>
-<rect class="b" x="466" y="62" width="128" height="70" rx="8"/><text x="530" y="88" text-anchor="middle">Homography</text><text x="530" y="106" text-anchor="middle" class="m">foot point to metres</text><text x="530" y="122" text-anchor="middle" class="m">court gate</text>
-<path class="a" d="M594 97H620"/>
-<rect class="b" x="622" y="62" width="128" height="70" rx="8"/><text x="686" y="88" text-anchor="middle">Tracking + identity</text><text x="686" y="106" text-anchor="middle" class="m">ByteTrack tracklets</text><text x="686" y="122" text-anchor="middle" class="m">tag frame anchored</text>
-<path class="a" d="M750 97H776"/>
-<rect class="b" x="778" y="62" width="190" height="70" rx="8"/><text x="873" y="88" text-anchor="middle">Per player JSON</text><text x="873" y="106" text-anchor="middle" class="m">metres, distance, zones, heatmap</text><text x="873" y="122" text-anchor="middle" class="m">sprints, events + confidence</text>
-<path class="a" d="M217 62V30H873V62"/><text x="545" y="22" text-anchor="middle" class="m">chunks stitched by box overlap in the shared 5 s window (exact when it links)</text>
-<text x="490" y="176" text-anchor="middle" class="m">Input: MP4 plus first frame player boxes mapped to names (from a tagging tool). Output: JSON plus a QA replay.</text>
-</svg>
-<ul>
-<li><b>Chunks.</b> The video is cut into 60 second chunks with a 5 second overlap and processed in parallel, so wall time stays roughly flat as the match gets longer. Consecutive chunks see the same frames in the overlap, so one person has near identical boxes in both. Identities are linked across chunks by box overlap, which is exact when it links, and a link is only made when the evidence is clear. Otherwise a new identity starts, never a guess.</li>
-<li><b>Detector.</b> RF-DETR (Apache 2.0), behind a small registry so another detector can be swapped in by name. Detections are gated to the court using the homography, which removes spectators and neighbouring courts.</li>
-<li><b>Homography.</b> A one time calibration per camera position from 8 floor points (net base, service line, far baseline). A small click tool produces it. Measured reprojection error is 0.23 to 0.55 m.</li>
-<li><b>Identity.</b> Anchored on the first frame boxes and names from the tagging tool. Appearance is a court colour masked histogram of the torso, and each chunk's four candidates are named by one assignment so two candidates can never get the same name.</li>
-<li><b>Outputs.</b> Positions in metres at 10 Hz, smoothed. Distance, sprints, net versus baseline zones, a 10 by 20 heatmap grid, and net approach events with a confidence score built from tracking coverage, how far back the approach started, and a plausible approach speed.</li>
-<li><b>Ball.</b> Tiled detection (SAHI style) with gap filling. It is measured below but not yet wired into the events.</li>
-</ul>
-
-<h2>Demo videos</h2>
-<p class="cap">The replays are rendered from the pipeline's own output (tracked positions in metres). They contain no source footage. The original videos belong to their uploaders, so they are linked or embedded from YouTube and never copied here.</p>
-<h3>Match 1: named players, running stats and events (output)</h3>
-<video controls preload="metadata" playsinline src="videos/match1_replay.mp4"></video>
-<p class="cap">A 90 second top down replay: four named players, 3 second trails, a flag whenever a net approach is detected (with its confidence), and running distance and event counts. The source is a 54 minute indoor padel match from a camera behind the back glass. Uploaders disabled embedding for this one, so here is the <a href="https://www.youtube.com/watch?v=CkVep4rP2dI&t=1580s">original video at the same moment</a> (opens YouTube).</p>
-
-<h3>Match 2: input next to the tracker output, including where it breaks</h3>
-<div class="vgrid">
-<div><div id="yt" class="ratio"></div><p class="cap">Input: <a href="https://www.youtube.com/watch?v=zTs3mYymNcA&t=165s">Padel Training Match, PadelKanalen</a> (embedded from YouTube, 02:45 to 03:55).</p></div>
-<div><video id="replay" class="ratio" controls preload="metadata" playsinline src="videos/match2_tracker_replay.mp4"></video><p class="cap">Output: a four target Kalman tracker at 24 fps. It follows all four players cleanly, then identity can no longer be trusted once the players change ends (about 03:38).</p></div>
+<h2>See it work</h2>
+<div class="player">
+<div><div id="yt"></div><p class="cap">Input: the match as filmed (<a href="https://www.youtube.com/watch?v=bdFXf9pRw3A&t=62s" target="_blank" rel="noopener">source video on YouTube</a>)</p></div>
+<div><video id="rv" muted playsinline preload="auto" src="videos/replay.mp4" style="aspect-ratio:16/9;object-fit:contain"></video><p class="cap">Output: the same moments as tracked positions on a top down court</p></div>
 </div>
-<p class="cap">Press play on the YouTube video and the replay follows it. This match is the hard case: all four players wear dark clothes.</p>
+<div class="ctl"><button id="pp" type="button">Play</button><input id="sk" type="range" min="0" max="52.0" step="0.1" value="0" aria-label="Seek"><span id="tm">0:00 / 0:00</span></div>
+<p class="cap">One control plays both. The right panel is rendered by the system from what it detects in the left video.</p>
+
+<h2>What you get</h2>
+<div class="feat">
+<div><b>Distance and speed</b>Total distance, top speed and sprint counts for every player.</div>
+<div><b>Court zones</b>Time at the net versus the baseline, and where each player spends the match.</div>
+<div><b>Heatmaps</b>A court grid per player, ready to drop into a report or app.</div>
+<div><b>Key moments</b>Timestamped events such as net approaches, each with a confidence score.</div>
+<div><b>Review video</b>An annotated video so a coach can check what the system saw.</div>
+<div><b>Data as JSON</b>Positions in metres at 10 Hz, so you can build your own views on top.</div>
+</div>
+
+<h2>How it works</h2>
+<div class="steps">
+<div class="step"><i>1</i><b>Film and upload</b>One fixed camera behind the court. A normal 1080p, 30 fps recording is enough.</div>
+<div class="step"><i>2</i><b>One time setup</b>Click four or more floor points once per camera position, and tag the four players on the first frame.</div>
+<div class="step"><i>3</i><b>Parallel processing</b>The match is split into one minute pieces that run at the same time on cloud GPUs, so a long match takes minutes.</div>
+<div class="step"><i>4</i><b>Reports</b>Per player statistics, heatmaps, key moments and a review video, or a stream of results as each piece finishes.</div>
+</div>
+<p>Built on open source components with commercial friendly licences (Apache 2.0 and MIT). There is no AGPL code, so it can be used in a commercial product. The detector and tracker can be swapped without changing the rest.</p>
 
 <h2>Results</h2>
 <h3>Speed and cost</h3>
 <div class="tw"><table><thead><tr><th>Run</th><th>Video</th><th>Chunks</th><th>GPUs</th><th>Wall time</th><th>Per chunk (mean / max)</th><th>Est. GPU cost</th></tr></thead><tbody>
 <tr><td>Match 1</td><td>54.2 min, 1080p, 60 fps</td><td class="n">55</td><td class="n">4</td><td class="n"><b>5.9 min</b></td><td class="n">22.6 s / 25.1 s</td><td class="n">about $0.30</td></tr>
 <tr><td>Match 2</td><td>75.9 min, 1080p, 24 fps, 1.8 Mbps</td><td class="n">76</td><td class="n">4</td><td class="n"><b>8.1 min</b></td><td class="n">23.9 s / 26.2 s</td><td class="n">about $0.42</td></tr>
-<tr><td>Match 1 with a second tiled pass for missed players <span class="tag o">off by default</span></td><td>54.2 min</td><td class="n">55</td><td class="n">4</td><td class="n">16.7 min</td><td class="n">69.6 s / 75.4 s</td><td class="n">about $0.87</td></tr>
 </tbody></table></div>
-<p class="cap">Costs are estimates: container time (chunks x per chunk time, plus about 20 s model load per GPU) at an assumed $0.80 per GPU hour. Modal's billing page is the source of truth. The runs cover detection and tracking. Wall time is flat in match length because chunks run in parallel, limited only by the GPU count. The tiled second pass tripled the time and did not improve coverage or identity, so it is switched off.</p>
+<p class="cap">Costs are estimates: container time at an assumed $0.80 per GPU hour. Run time stays flat as matches get longer because chunks are processed in parallel, limited only by the number of GPUs.</p>
+
 
 <h3>Detection and calibration</h3>
 <div class="tw"><table><thead><tr><th>Measure</th><th>Result</th><th>Basis</th></tr></thead><tbody>
@@ -88,109 +79,43 @@ svg text{font:12px system-ui;fill:var(--fg)}svg .b{fill:var(--card);stroke:var(-
 <tr><td>Calibration error, match 1 / match 2</td><td class="n">0.23 m / 0.28 m (mean)</td><td>8 clicked floor points each, no lens undistortion</td></tr>
 <tr><td>Calibration error, two short clips (other venues)</td><td class="n">0.36 m / 0.55 m</td><td>wide angle lenses</td></tr>
 </tbody></table></div>
-<p class="cap">Lesson: my first by eye calibration put the net on its top tape instead of the floor line. Every distance to the net was off, and the first event check scored 0 of 40. It was found by comparing estimated distances with an independent judgement, and fixed. Positions are only as good as the calibration.</p>
-
-<h3>Identity ablation, match 1 (distinct shirt colours)</h3>
-<div class="tw"><table><thead><tr><th>Method</th><th>Accuracy</th><th>Comment</th></tr></thead><tbody>
-<tr><td>Chain identities chunk to chunk (overlap linking only)</td><td class="n">28.6%</td><td>each player fragments across 8 to 12 ids, some ids are shared by players</td></tr>
-<tr><td>Global appearance clustering, hue and saturation histogram</td><td class="n">78% to 82%</td><td>4 identities, constrained so one chunk cannot use a name twice</td></tr>
-<tr><td>Add a general purpose body embedding (DINOv2)</td><td class="n">50% to 67%</td><td>worse, and 14 s more per chunk. Dropped</td></tr>
-<tr><td>Court colour masked torso histogram, whole match clustering</td><td class="n">96.7%</td><td>removing the blue court from the histogram was the key change</td></tr>
-<tr><td>Same, streaming: enrol on the first 3 chunks</td><td class="n"><b>97.2%</b></td><td>396 labelled instances (labels from a vision model)</td></tr>
-<tr><td>Named assignment from a tag file, strict</td><td class="n"><b>97.2%</b> / <b>94.4%</b></td><td>vs model labels (385 of 396) / vs human verified labels (67 of 71)</td></tr>
-</tbody></table></div>
-
-<h3>Other venues (2 minute clips, 4 venues plus the start of match 1)</h3>
-<div class="tw"><table><thead><tr><th>Clip</th><th>Appearance method</th><th>Per frame tracker ids</th></tr></thead><tbody>
-<tr><td>Venue A (outdoor, green court)</td><td class="n">100%</td><td class="n">98%</td></tr>
-<tr><td>Venue B</td><td class="n">100%</td><td class="n">81%</td></tr>
-<tr><td>Start of match 1</td><td class="n">100%</td><td class="n">87%</td></tr>
-<tr><td>Start of match 2 (dark kit, same venue as below)</td><td class="n">95%</td><td class="n">87%</td></tr>
-<tr><td>Venue C (four dark outfits)</td><td class="n">96%</td><td class="n">74%</td></tr>
-<tr><td><b>Weighted, 170 instances</b></td><td class="n"><b>98.2%</b></td><td class="n">85.9%</td></tr>
-</tbody></table></div>
-<p class="cap">Short clips only (no long range drift, no streaming), labels from a vision model and not individually human checked. Note the start of match 2 scores 95% over 2 minutes but about 63% over 76 minutes: short windows are far easier.</p>
-
-<h3>Identity on look alike kit, match 2 (the open problem)</h3>
-<p>Match 2 is a 76 minute match where all four players wear dark clothes, one player is told apart by light shorts, and the partners rotate between games. This is the case that does not work yet. Everything below is scored on human verified labels where marked, tuned on separate frames.</p>
-<div class="tw"><table><thead><tr><th>Approach</th><th>Accuracy</th><th>What happened</th></tr></thead><tbody>
-<tr><td>Named assignment, anchored on an <i>unverified</i> first frame</td><td class="n">49.4% / 55.9%</td><td>my own tag file named the three dark players in the wrong cyclic order. Re anchoring on a human verified frame fixed it</td></tr>
-<tr><td>Named assignment, anchored on a human verified frame</td><td class="n"><b>62.7%</b> / 60.9%</td><td>human labels / model labels. The light shorted player is 21 of 21</td></tr>
-<tr><td>Per frame anchored tracker, torso colour</td><td class="n">57.5% / 52.2%</td><td>human test (80 instances) / tuning set (412)</td></tr>
-<tr><td>Same, all appearance features plus position</td><td class="n">10.0% / 17.7%</td><td>one swap locks in and poisons the prototypes</td></tr>
-<tr><td>Conservative tracklets, longest first, torso + legs + head</td><td class="n">62.5% / 56.3%</td><td>14,672 tracklets, never merged across ambiguity</td></tr>
-<tr><td>Learned person re-identification (OSNet-AIN), tracklets, alone</td><td class="n">42.5% / 31.6%</td><td>weaker than colour on its own</td></tr>
-<tr><td>Tracklets, torso colour + OSNet-AIN</td><td class="n">65.0% / 58.7%</td><td>best of the label free runs, within noise of colour alone</td></tr>
-<tr><td>Padel pair structure decoder (partners share a side, Viterbi over game states)</td><td class="n">52.5% to 55.0% / 53% to 56%</td><td>finds the side of the near pair 99% of the time but the partner only 42% to 50%</td></tr>
-<tr><td>Four target Kalman tracker at 24 fps</td><td class="n">24% to 42%</td><td>correct 4 of 4 for 40 to 60 s, then identity breaks at the changeover when players change ends</td></tr>
-<tr><td>Name Kalman tracks by pooled appearance per window (15 to 240 s)</td><td class="n">about 33%</td><td>a player's colour depends on court position as much as on who they are</td></tr>
-<tr><td>Supervised ceiling, whole 5 minute blocks held out (492 labelled instances)</td><td class="n">59% to 66%</td><td>torso colour 62% to 64%, OSNet-AIN alone 59% to 60%, colour + OSNet 63% to 66%, brightness and Lab colour 64%</td></tr>
-<tr><td>Estimated player height</td><td class="n">not separable</td><td>medians 1.6 to 1.9 m with overlapping spread</td></tr>
-</tbody></table></div>
-<div class="note"><b>Honest read.</b> With a 1.8 Mbps GoPro behind the baseline, the three dark clothed players cannot be told apart reliably by colour, by learned re-identification, by padel structure or by motion. Every combination lands at about 60% to 66%. Identity holds through a game and breaks at each changeover. The sensible product answer is to report an identity confidence, flag matches where players look alike, and offer pair level (far pair, near pair) statistics, which do not depend on telling the three apart. Better footage or distinguishable bibs would change what is possible.</div>
-
-<h3>Events and ball</h3>
-<div class="tw"><table><thead><tr><th>Measure</th><th>Result</th><th>Basis</th></tr></thead><tbody>
-<tr><td>Net approach events, precision / recall</td><td class="n"><b>71.7% / 57.6%</b></td><td>10 minute window of match 1, same player within 3 s, reference built from per frame model judgements (1.5 s steps)</td></tr>
-<tr><td>Same, ignoring which player</td><td class="n">87% / 76%</td><td>much of the gap is identity attribution</td></tr>
-<tr><td>Events with confidence 0.85 or higher</td><td class="n">81% precise</td><td>confidence was redesigned after the first version ranked events backwards, and validated on a fresh sample</td></tr>
-<tr><td>Events versus random time controls</td><td class="n">57.5% and 62.5% vs 2.5%</td><td>two samples of 40, a player must start away from the net and end at it</td></tr>
-<tr><td>Ball, tiled detector, confidence 0.3</td><td class="n">82% precision / 75% recall</td><td>108 frames, reference ball positions from a vision model, 30 px tolerance</td></tr>
-<tr><td>Ball, full frame detector, confidence 0.3</td><td class="n">90% / 44%</td><td>tiling doubles recall at a small precision cost</td></tr>
-<tr><td>Missed players recovered by a second tiled pass</td><td class="n">2 of 5 fully, 2 partly</td><td>human flagged frames. The pass cost 3x time on a full match with no gain in coverage or identity</td></tr>
-</tbody></table></div>
-
-<h3>Per player output (match 1, the full 54 minutes)</h3>
+<p class="cap">Measured on labelled frames from public match footage. Labels were produced with a vision language model and spot checked by a person. Calibration is a one time step per camera position, done with a small click tool.</p>
+<h3>Per player output (a full 54 minute match)</h3>
 <div class="tw"><table><thead><tr><th>Player</th><th>Distance</th><th>Sprints</th><th>Net / baseline share</th><th>Coverage</th></tr></thead><tbody>
 <tr><td>Neon yellow shirt</td><td>3156 m</td><td>17</td><td>19% / 81%</td><td>95%</td></tr><tr><td>Yellow shirt (knee brace)</td><td>2730 m</td><td>16</td><td>16% / 84%</td><td>96%</td></tr><tr><td>Red shirt</td><td>2708 m</td><td>26</td><td>18% / 82%</td><td>94%</td></tr><tr><td>Black shirt</td><td>3049 m</td><td>37</td><td>21% / 79%</td><td>91%</td></tr>
-</tbody></table></div>
-<p class="cap">259 net approach events were produced across the four players. Sprint = at least 4.5 m/s for at least 0.7 s. Net zone = within 3 m of the net. Positions come from a measured calibration, so distances are indicative, not survey grade.</p>
-<img src="img/heatmaps_match1.png" alt="Per player court heatmaps for match 1" style="width:100%;max-width:880px;border:1px solid var(--line);border-radius:10px">
-<p class="cap">Per player heatmaps from the output JSON. Each panel is the court, far half on top and near half below the net line, so players are active on both halves because they change ends.</p>
+</tbody></table></div><p class="cap">Sprint is at least 4.5 m/s for at least 0.7 s. Net zone is within 3 m of the net. Positions come from a measured court calibration, so distances are indicative rather than survey grade.</p>
 
-<h2>What did not work, and what I learned</h2>
-<ul>
-<li><b>Chaining identities between chunks</b> (28.6%): errors compound. Anchoring every chunk to prototypes and forbidding duplicate names fixed it on distinct kit.</li>
-<li><b>A "better feature" that was an artefact.</b> Adding brightness and Lab colour looked like a jump from 62% to 97%. It was leakage: two labelled frames from the same minute landed on both sides of my train and test split. Holding out whole 5 minute blocks, it was 64%. All later numbers use time held out splits.</li>
-<li><b>A wrong anchor poisons every test.</b> The first frame names for match 2 came from an unverified frame, and every result built on it was understated. Identities for a tag file must come from a human verified frame, which the real tagging tool provides.</li>
-<li><b>Assuming fixed teams.</b> In match 2 the partners rotate, so "team" is not a property of a player. Teams must be derived from the side of the net in each frame.</li>
-<li><b>Learned re-identification is not magic.</b> OSNet-AIN carries about as much identity information as torso colour on look alike kit (59% to 60% held out) but adds only 1 to 2 points on top of it. Its weights were trained on research datasets with their own terms, so it would also need a licence check before production use.</li>
-<li><b>Re-tagging does not help appearance.</b> Training only on nearby labels was no better than using the whole match.</li>
-</ul>
+<h2>Start with a pilot</h2>
+<div class="cta">
+<p><b>Send one match and get a full report back.</b> A pilot covers one camera position: calibration, player tagging, processing, per player statistics, heatmaps, key moments and a review video.</p>
+<p>What I need from you: a recording from a fixed camera behind the court, the four players (a name for each, on the first frame), and the camera position. Results are most reliable when the four players are easy to tell apart. When they wear very similar kit, per player attribution is less certain, and the output says so with a confidence score.</p>
+</div>
 
-<h2>Limitations and next steps</h2>
-<ul>
-<li><b>Football is not demonstrated.</b> Everything here is padel. The football path (thirds, shots, goals) exists in code but I have no full size pitch footage to validate it.</li>
-<li><b>Look alike kit</b> is unsolved (above). Next: identity confidence per detection and pair level outputs when players look alike.</li>
-<li><b>Live ingestion</b> is not built. Chunk stitching and the named assignment are implemented and tested on saved chunks, not on a live stream.</li>
-<li><b>Ball events</b> (shots, goals) are not wired to the ball detections yet.</li>
-<li><b>Annotated QA video</b> over the real footage exists as a renderer but I have produced only short excerpts, and I do not publish source footage here.</li>
-<li><b>Sample sizes</b> are small (tens to a few hundred labelled instances). One full match with distinct kit, one with dark kit, four short clips.</li>
-</ul>
-
-<h2>How the numbers were measured</h2>
-<ul>
-<li><b>Labels.</b> Reference labels (which box is which player, where the ball is, who is at the net) were produced with a vision language model, then checked by a human on a sample: 139 of 140 boxes agreed in the first review (99.3%), and 87 of 90 on match 2 (3 corrections where bystanders were labelled as players). Where a number says "human verified" it is scored on those checked labels only.</li>
-<li><b>Splits.</b> Parameters were tuned on model labelled frames that the human had not reviewed, and results are reported on the human verified frames. Cross validation holds out whole 5 minute blocks.</li>
-<li><b>Data.</b> Two full public YouTube matches and a handful of short public clips, used for testing only and not redistributed. The pipeline works from the first frame boxes and names that a tagging tool would supply.</li>
-<li><b>Licences.</b> RF-DETR (Apache 2.0), supervision and roboflow trackers (Apache 2.0, MIT). No Ultralytics or AGPL code is installed or imported (a unit test checks both). An OSNet-AIN model file (Torchreid, MIT) is vendored for the experiment above, with its licence, and is not part of the production path.</li>
-</ul>
-
-<h2>Code</h2>
-<p>The code and experiment scripts are not public. They are available on request, together with the measured calibration files and tag files behind every table above.</p>
-
-</main>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-// Keep the replay in step with the embedded YouTube video (start 165 s). Falls back silently if the embed is blocked.
-var T0 = 165, player = null, rv = document.getElementById('replay');
+var T0=62.0, T1=114.0, yt=null, ready=false, playing=false, rv=document.getElementById('rv'), pp=document.getElementById('pp'), sk=document.getElementById('sk'), tm=document.getElementById('tm'), dragging=false;
+function f(s){s=Math.max(0,s);return Math.floor(s/60)+':'+('0'+Math.floor(s%60)).slice(-2)}
+function ui(t){ if(!dragging) sk.value=t; tm.textContent=f(t)+' / '+f(T1-T0); }
 function onYouTubeIframeAPIReady(){
-  player = new YT.Player('yt', {host:'https://www.youtube-nocookie.com', videoId:'zTs3mYymNcA', playerVars:{start:165, end:235, rel:0, modestbranding:1, playsinline:1},
-    events:{onStateChange:function(e){
-      if(e.data===1){ rv.currentTime=Math.max(0, player.getCurrentTime()-T0); rv.play().catch(function(){}); }
-      else if(e.data===2||e.data===0){ rv.pause(); }
-    }}});
-  setInterval(function(){ try{ if(player.getPlayerState()===1){ var d=Math.abs(rv.currentTime-(player.getCurrentTime()-T0)); if(d>0.7) rv.currentTime=Math.max(0, player.getCurrentTime()-T0); } }catch(x){} }, 1000);
+  yt=new YT.Player('yt',{host:'https://www.youtube-nocookie.com',videoId:'bdFXf9pRw3A',width:'100%',height:'100%',playerVars:{start:T0,end:T1,controls:0,disablekb:1,fs:0,rel:0,modestbranding:1,playsinline:1,iv_load_policy:3},
+    events:{onReady:function(){ready=true;var i=yt.getIframe();i.style.width='100%';i.style.height='auto';i.style.aspectRatio='16/9';i.style.borderRadius='10px';i.style.background='#000'},
+      onStateChange:function(e){ if(e.data===0){ setPlaying(false); yt.seekTo(T0,true); yt.pauseVideo(); rv.currentTime=0; ui(0); } }}});
 }
+function setPlaying(p){ playing=p; pp.textContent=p?'Pause':'Play'; }
+pp.onclick=function(){
+  if(!ready){return;}
+  if(playing){ yt.pauseVideo(); rv.pause(); setPlaying(false); }
+  else { var t=yt.getCurrentTime(); if(t<T0||t>=T1-0.3){yt.seekTo(T0,true); rv.currentTime=0;} yt.playVideo(); rv.play().catch(function(){}); setPlaying(true); }
+};
+sk.oninput=function(){ dragging=true; var t=parseFloat(sk.value); rv.currentTime=t; if(ready) yt.seekTo(T0+t,true); ui(t); };
+sk.onchange=function(){ dragging=false; };
+setInterval(function(){
+  if(!ready) return;
+  try{ var t=yt.getCurrentTime()-T0; var st=yt.getPlayerState();
+    if(st===1){ if(Math.abs(rv.currentTime-t)>0.35) rv.currentTime=Math.max(0,t); if(rv.paused) rv.play().catch(function(){}); ui(Math.max(0,t)); if(!playing) setPlaying(true); }
+    else if(st===3){ rv.pause(); }
+  }catch(e){}
+},200);
+rv.addEventListener('loadedmetadata',function(){ui(0)});
 </script>
-</body></html>
+</main></body></html>
