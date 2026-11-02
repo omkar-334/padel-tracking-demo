@@ -20,8 +20,8 @@ svg text{font:12px system-ui;fill:var(--fg)}svg .b{fill:var(--card);stroke:var(-
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0}.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}.step i{font-style:normal;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;font-size:.85rem;margin-bottom:6px}.step b{display:block}
 .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:14px 0}.feat div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}.feat b{display:block;margin-bottom:2px}
 .player{display:grid;grid-template-columns:1fr 1fr;gap:14px;pointer-events:auto}@media(max-width:760px){.player{grid-template-columns:1fr}}
-#yt,#yt iframe{pointer-events:none}.ctl{display:flex;gap:12px;align-items:center;margin:12px 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
-#pp{font-size:1rem;font-weight:600;padding:10px 26px;border-radius:99px;border:0;background:var(--acc);color:#fff;cursor:pointer;min-width:110px}#sk{flex:1;accent-color:var(--acc)}#tm{font-variant-numeric:tabular-nums;color:var(--mut);font-size:.9rem;min-width:84px;text-align:right}
+.player iframe,.player [id^=yt]{pointer-events:none}.ctl{display:flex;gap:12px;align-items:center;margin:12px 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.ctl button{font-size:1rem;font-weight:600;padding:10px 26px;border-radius:99px;border:0;background:var(--acc);color:#fff;cursor:pointer;min-width:110px}.ctl input{flex:1;accent-color:var(--acc)}.tmc{font-variant-numeric:tabular-nums;color:var(--mut);font-size:.9rem;min-width:84px;text-align:right}
 .cta{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:10px}
 </style></head><body><main>
 
@@ -37,12 +37,25 @@ svg text{font:12px system-ui;fill:var(--fg)}svg .b{fill:var(--card);stroke:var(-
 </div>
 
 <h2>See it work</h2>
+<p class="cap">Press Play: the match as filmed on the left, the same moments as tracked by the system on the right. One control plays both.</p>
+<h3>Outdoor court</h3>
 <div class="player">
-<div><div id="yt"></div><p class="cap">Input: the match as filmed (<a href="https://www.youtube.com/watch?v=bdFXf9pRw3A&t=62s" target="_blank" rel="noopener">source video on YouTube</a>)</p></div>
-<div><video id="rv" muted playsinline preload="auto" src="videos/replay.mp4" style="aspect-ratio:16/9;object-fit:contain"></video><p class="cap">Output: the same moments as tracked positions on a top down court</p></div>
+<div><div id="yt0"></div><p class="cap">Input: the match as filmed (<a href="https://www.youtube.com/watch?v=bdFXf9pRw3A&t=62s" target="_blank" rel="noopener">source video on YouTube</a>)</p></div>
+<div><video id="rv0" muted playsinline preload="auto" src="videos/bdfx.mp4" style="aspect-ratio:16/9;object-fit:contain"></video><p class="cap">Output: the same moments as tracked positions on a top down court, with distance and speed per player</p></div>
 </div>
-<div class="ctl"><button id="pp" type="button">Play</button><input id="sk" type="range" min="0" max="52.0" step="0.1" value="0" aria-label="Seek"><span id="tm">0:00 / 0:00</span></div>
-<p class="cap">One control plays both. The right panel is rendered by the system from what it detects in the left video.</p>
+<div class="ctl"><button id="pp0" type="button">Play</button><input id="sk0" type="range" min="0" max="52.0" step="0.1" value="0" aria-label="Seek"><span id="tm0" class="tmc">0:00 / 0:00</span></div>
+<h3>Indoor court, wide angle camera</h3>
+<div class="player">
+<div><div id="yt1"></div><p class="cap">Input: the match as filmed (<a href="https://www.youtube.com/watch?v=zTs3mYymNcA&t=1562s" target="_blank" rel="noopener">source video on YouTube</a>)</p></div>
+<div><video id="rv1" muted playsinline preload="auto" src="videos/zts.mp4" style="aspect-ratio:16/9;object-fit:contain"></video><p class="cap">Output: the same moments as tracked positions on a top down court</p></div>
+</div>
+<div class="ctl"><button id="pp1" type="button">Play</button><input id="sk1" type="range" min="0" max="52.0" step="0.1" value="0" aria-label="Seek"><span id="tm1" class="tmc">0:00 / 0:00</span></div>
+<h3>Indoor court, another rally</h3>
+<div class="player">
+<div><div id="yt2"></div><p class="cap">Input: the match as filmed (<a href="https://www.youtube.com/watch?v=zTs3mYymNcA&t=962s" target="_blank" rel="noopener">source video on YouTube</a>)</p></div>
+<div><video id="rv2" muted playsinline preload="auto" src="videos/zts2.mp4" style="aspect-ratio:16/9;object-fit:contain"></video><p class="cap">Output: the same moments as tracked positions on a top down court</p></div>
+</div>
+<div class="ctl"><button id="pp2" type="button">Play</button><input id="sk2" type="range" min="0" max="52.0" step="0.1" value="0" aria-label="Seek"><span id="tm2" class="tmc">0:00 / 0:00</span></div>
 
 <h2>What you get</h2>
 <div class="feat">
@@ -61,6 +74,32 @@ svg text{font:12px system-ui;fill:var(--fg)}svg .b{fill:var(--card);stroke:var(-
 <div class="step"><i>3</i><b>Parallel processing</b>The match is split into one minute pieces that run at the same time on cloud GPUs, so a long match takes minutes.</div>
 <div class="step"><i>4</i><b>Reports</b>Per player statistics, heatmaps, key moments and a review video, or a stream of results as each piece finishes.</div>
 </div>
+<h3>Approach in detail</h3>
+<svg viewBox="0 0 980 215" width="100%" role="img" aria-label="Pipeline diagram">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="m"/></marker></defs>
+<rect class="b" x="6" y="62" width="118" height="70" rx="8"/><text x="65" y="92" text-anchor="middle">Match video</text><text x="65" y="110" text-anchor="middle" class="m">60 to 90 min</text>
+<path class="a" d="M124 97H150"/>
+<rect class="b" x="152" y="62" width="130" height="70" rx="8"/><text x="217" y="88" text-anchor="middle">1 min chunks</text><text x="217" y="106" text-anchor="middle" class="m">5 s overlap, in parallel</text><text x="217" y="122" text-anchor="middle" class="m">on Modal GPUs</text>
+<path class="a" d="M282 97H308"/>
+<rect class="b" x="310" y="62" width="128" height="70" rx="8"/><text x="374" y="88" text-anchor="middle">RF-DETR</text><text x="374" y="106" text-anchor="middle" class="m">swappable detector</text><text x="374" y="122" text-anchor="middle" class="m">persons (+ ball tiles)</text>
+<path class="a" d="M438 97H464"/>
+<rect class="b" x="466" y="62" width="128" height="70" rx="8"/><text x="530" y="88" text-anchor="middle">Homography</text><text x="530" y="106" text-anchor="middle" class="m">foot point to metres</text><text x="530" y="122" text-anchor="middle" class="m">court gate</text>
+<path class="a" d="M594 97H620"/>
+<rect class="b" x="622" y="62" width="128" height="70" rx="8"/><text x="686" y="88" text-anchor="middle">Tracking + identity</text><text x="686" y="106" text-anchor="middle" class="m">ByteTrack tracklets</text><text x="686" y="122" text-anchor="middle" class="m">tag frame anchored</text>
+<path class="a" d="M750 97H776"/>
+<rect class="b" x="778" y="62" width="190" height="70" rx="8"/><text x="873" y="88" text-anchor="middle">Per player data</text><text x="873" y="106" text-anchor="middle" class="m">metres, distance, zones, heatmap</text><text x="873" y="122" text-anchor="middle" class="m">sprints, events + confidence</text>
+<path class="a" d="M217 62V30H873V62"/><text x="545" y="22" text-anchor="middle" class="m">chunks stitched by box overlap in the shared 5 s window (exact when it links)</text>
+<text x="490" y="176" text-anchor="middle" class="m">Input: MP4 plus first frame player boxes mapped to names (from a tagging tool). Output: JSON plus a QA replay.</text>
+</svg>
+<ul>
+<li><b>Chunks.</b> The video is cut into 60 second chunks with a 5 second overlap and processed in parallel, so wall time stays roughly flat as the match gets longer. Consecutive chunks see the same frames in the overlap, so one person has near identical boxes in both. Identities are linked across chunks by box overlap, which is exact when it links, and a link is only made when the evidence is clear. Otherwise a new identity starts, never a guess.</li>
+<li><b>Detector.</b> RF-DETR (Apache 2.0), behind a small registry so another detector can be swapped in by name. Detections are gated to the court using the homography, which removes spectators and neighbouring courts.</li>
+<li><b>Homography.</b> A one time calibration per camera position from 8 floor points (net base, service line, far baseline). A small click tool produces it. Measured reprojection error is 0.23 to 0.55 m.</li>
+<li><b>Identity.</b> Anchored on the first frame boxes and names from the tagging tool. Appearance is a court colour masked histogram of the torso, and each chunk's four candidates are named by one assignment so two candidates can never get the same name.</li>
+<li><b>Outputs.</b> Positions in metres at 10 Hz, smoothed. Distance, sprints, net versus baseline zones, a 10 by 20 heatmap grid, and net approach events with a confidence score built from tracking coverage, how far back the approach started, and a plausible approach speed.</li>
+</ul>
+
+
 <p>Built on open source components with commercial friendly licences (Apache 2.0 and MIT). There is no AGPL code, so it can be used in a commercial product. The detector and tracker can be swapped without changing the rest.</p>
 
 <h2>Results</h2>
@@ -87,29 +126,31 @@ svg text{font:12px system-ui;fill:var(--fg)}svg .b{fill:var(--card);stroke:var(-
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-var T0=62.0, T1=114.0, yt=null, ready=false, playing=false, rv=document.getElementById('rv'), pp=document.getElementById('pp'), sk=document.getElementById('sk'), tm=document.getElementById('tm'), dragging=false;
+var DEMOS=[{"id": "bdFXf9pRw3A", "t0": 62, "t1": 114}, {"id": "zTs3mYymNcA", "t0": 1562, "t1": 1614}, {"id": "zTs3mYymNcA", "t0": 962, "t1": 1014}], ctl=[];
 function f(s){s=Math.max(0,s);return Math.floor(s/60)+':'+('0'+Math.floor(s%60)).slice(-2)}
-function ui(t){ if(!dragging) sk.value=t; tm.textContent=f(t)+' / '+f(T1-T0); }
-function onYouTubeIframeAPIReady(){
-  yt=new YT.Player('yt',{host:'https://www.youtube-nocookie.com',videoId:'bdFXf9pRw3A',width:'100%',height:'100%',playerVars:{start:T0,end:T1,controls:0,disablekb:1,fs:0,rel:0,modestbranding:1,playsinline:1,iv_load_policy:3},
-    events:{onReady:function(){ready=true;var i=yt.getIframe();i.style.width='100%';i.style.height='auto';i.style.aspectRatio='16/9';i.style.borderRadius='10px';i.style.background='#000'},
-      onStateChange:function(e){ if(e.data===0){ setPlaying(false); yt.seekTo(T0,true); yt.pauseVideo(); rv.currentTime=0; ui(0); } }}});
+function onYouTubeIframeAPIReady(){ DEMOS.forEach(function(d,i){ ctl.push(mk(d,i)); }); }
+function mk(d,i){
+  var o={yt:null,ready:false,playing:false,dragging:false,rv:document.getElementById('rv'+i),pp:document.getElementById('pp'+i),sk:document.getElementById('sk'+i),tm:document.getElementById('tm'+i)}, T0=d.t0, T1=d.t1;
+  function ui(t){ if(!o.dragging) o.sk.value=t; o.tm.textContent=f(t)+' / '+f(T1-T0); }
+  function setP(p){ o.playing=p; o.pp.textContent=p?'Pause':'Play'; }
+  o.stop=function(){ if(o.ready&&o.playing){ o.yt.pauseVideo(); o.rv.pause(); setP(false);} };
+  o.yt=new YT.Player('yt'+i,{host:'https://www.youtube-nocookie.com',videoId:d.id,width:'100%',height:'100%',playerVars:{start:T0,end:T1,controls:0,disablekb:1,fs:0,rel:0,modestbranding:1,playsinline:1,iv_load_policy:3},
+    events:{onReady:function(){o.ready=true;var q=o.yt.getIframe();q.style.width='100%';q.style.height='auto';q.style.aspectRatio='16/9';q.style.borderRadius='10px';q.style.background='#000';},
+      onStateChange:function(e){ if(e.data===0){ setP(false); o.yt.seekTo(T0,true); o.yt.pauseVideo(); o.rv.currentTime=0; ui(0); } }}});
+  o.pp.onclick=function(){
+    if(!o.ready) return;
+    if(o.playing){ o.stop(); return; }
+    ctl.forEach(function(c){ if(c!==o) c.stop(); });
+    var t=o.yt.getCurrentTime(); if(t<T0||t>=T1-0.3){ o.yt.seekTo(T0,true); o.rv.currentTime=0; }
+    o.yt.playVideo(); o.rv.play().catch(function(){}); setP(true);
+  };
+  o.sk.oninput=function(){ o.dragging=true; var t=parseFloat(o.sk.value); o.rv.currentTime=t; if(o.ready) o.yt.seekTo(T0+t,true); ui(t); };
+  o.sk.onchange=function(){ o.dragging=false; };
+  setInterval(function(){ if(!o.ready) return; try{ var t=o.yt.getCurrentTime()-T0, st=o.yt.getPlayerState();
+    if(st===1){ if(Math.abs(o.rv.currentTime-t)>0.35) o.rv.currentTime=Math.max(0,t); if(o.rv.paused) o.rv.play().catch(function(){}); ui(Math.max(0,t)); if(!o.playing) setP(true); }
+    else if(st===3){ o.rv.pause(); } }catch(e){} },200);
+  o.rv.addEventListener('loadedmetadata',function(){ui(0)});
+  return o;
 }
-function setPlaying(p){ playing=p; pp.textContent=p?'Pause':'Play'; }
-pp.onclick=function(){
-  if(!ready){return;}
-  if(playing){ yt.pauseVideo(); rv.pause(); setPlaying(false); }
-  else { var t=yt.getCurrentTime(); if(t<T0||t>=T1-0.3){yt.seekTo(T0,true); rv.currentTime=0;} yt.playVideo(); rv.play().catch(function(){}); setPlaying(true); }
-};
-sk.oninput=function(){ dragging=true; var t=parseFloat(sk.value); rv.currentTime=t; if(ready) yt.seekTo(T0+t,true); ui(t); };
-sk.onchange=function(){ dragging=false; };
-setInterval(function(){
-  if(!ready) return;
-  try{ var t=yt.getCurrentTime()-T0; var st=yt.getPlayerState();
-    if(st===1){ if(Math.abs(rv.currentTime-t)>0.35) rv.currentTime=Math.max(0,t); if(rv.paused) rv.play().catch(function(){}); ui(Math.max(0,t)); if(!playing) setPlaying(true); }
-    else if(st===3){ rv.pause(); }
-  }catch(e){}
-},200);
-rv.addEventListener('loadedmetadata',function(){ui(0)});
 </script>
 </main></body></html>
